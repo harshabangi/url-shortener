@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 )
 
@@ -20,7 +21,7 @@ func (r ShortenRequest) Validate() ValidationResult {
 	}
 	parsedURL, err := url.ParseRequestURI(r.URL)
 	if err != nil {
-		return ValidationResult{Err: err}
+		return ValidationResult{Err: fmt.Errorf("invalid url: %w", err)}
 	}
 	return ValidationResult{Domain: parsedURL.Host, Err: nil}
 }
