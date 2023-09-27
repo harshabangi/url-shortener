@@ -16,10 +16,22 @@ import (
 )
 
 type Service struct {
+	config  *Config
 	storage storage.Store
 }
 
-func NewService() (*Service, error) {
+type Config struct {
+	ShortURLDomain    string `json:"short_url_domain"`
+	ListenAddr        string `json:"listen_addr"`
+	DataStorageEngine string `json:"data_storage_engine"`
+	ShortURLLength    int    `json:"short_url_length"`
+}
+
+func NewConfig() *Config {
+	return &Config{}
+}
+
+func NewService(config *Config) (*Service, error) {
 	store, err := storage.New("memory")
 	if err != nil {
 		return nil, err
@@ -27,6 +39,7 @@ func NewService() (*Service, error) {
 
 	return &Service{
 		storage: store,
+		config:  config,
 	}, nil
 }
 
@@ -43,10 +56,10 @@ func (s *Service) Run() {
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	e.POST("/v1/shorten", shorten)
-	e.GET("/v1/expand/:short_code", expand)
+	e.GET("/:short_code", expand)
 	e.GET("/v1/metrics", metrics)
 
-	e.Logger.Fatal(e.Start(":8082"))
+	e.Logger.Fatal(e.Start(s.config.ListenAddr))
 }
 
 // identify godoc
@@ -71,14 +84,18 @@ func shorten(c echo.Context) error {
 
 	validationResult := req.Validate()
 	if validationResult.Err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
+		return echo.NewHTTPError(http.StatusBadRequest, validationResult.Err)
 	}
 
 	shortURL, err := generateShortURL(s, req.URL, validationResult.Domain, 0)
-	if err == nil {
-		return c.JSON(http.StatusOK, &pkg.ShortenResponse{URL: shortURL})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
-	return echo.NewHTTPError(http.StatusInternalServerError)
+
+	response := &pkg.ShortenResponse{
+		URL: fmt.Sprintf("%s/%s", s.config.ShortURLDomain, shortURL),
+	}
+	return c.JSON(http.StatusOK, response)
 }
 
 func generateShortURL(s *Service, originalURL, domainName string, collisionCounter int64) (string, error) {
@@ -97,7 +114,7 @@ func generateShortURL(s *Service, originalURL, domainName string, collisionCount
 		return "", fmt.Errorf("error converting from md5 to base62: %s: %w", md5Hash, err)
 	}
 
-	shortHash := hash[:7]
+	shortHash := hash[:s.config.ShortURLLength]
 
 	err = s.storage.SaveURL(shortHash, originalURL)
 	switch {
@@ -123,7 +140,7 @@ func generateShortURL(s *Service, originalURL, domainName string, collisionCount
 // @Success 301
 // @Failure 404
 // @Failure 500
-// @Router /v1/expand/{short_code} [get]
+// @Router /{short_code} [get]
 func expand(c echo.Context) error {
 	s := c.Get("service").(*Service)
 	key := c.Param("short_code")

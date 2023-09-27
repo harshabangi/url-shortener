@@ -59,4 +59,4 @@ urls=(
 )
 
 # Use xargs to run the curl commands in parallel
-printf "%s\n" "${urls[@]}" | xargs -n 1 -P 50 -I {} curl --request POST --url "http://localhost:8082/v1/shorten" --data '{"url": "{}"}' --header 'Content-Type: application/json'
+printf "%s\n" "${urls[@]}" | xargs -n 1 -P 50 -I {} curl --request POST --url "http://localhost:8080/v1/shorten" --data '{"url": "{}"}' --header 'Content-Type: application/json'

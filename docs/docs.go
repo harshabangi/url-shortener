@@ -25,38 +25,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/v1/expand/{short_code}": {
-            "get": {
-                "description": "Redirect to the original URL associated with the provided short code.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "root"
-                ],
-                "summary": "Redirect to the original URL given a short code.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "The short code to expand",
-                        "name": "short_code",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "301": {
-                        "description": "Moved Permanently"
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
         "/v1/metrics": {
             "get": {
                 "description": "Redirect to the original URL associated with the provided short code.",
@@ -110,6 +78,38 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/pkg.ShortenResponse"
                         }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{short_code}": {
+            "get": {
+                "description": "Redirect to the original URL associated with the provided short code.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "root"
+                ],
+                "summary": "Redirect to the original URL given a short code.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The short code to expand",
+                        "name": "short_code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "301": {
+                        "description": "Moved Permanently"
                     },
                     "404": {
                         "description": "Not Found"
