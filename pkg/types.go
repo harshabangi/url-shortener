@@ -29,3 +29,10 @@ func (r ShortenRequest) Validate() ValidationResult {
 type ShortenResponse struct {
 	URL string `json:"url"`
 }
+
+type DomainFreqResponse struct {
+	DomainName string `json:"domain_name"`
+	Frequency  int64  `json:"frequency"`
+}
+
+type DomainFreqListResponse []DomainFreqResponse

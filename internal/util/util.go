@@ -6,7 +6,7 @@ import (
 	"github.com/eknkc/basex"
 )
 
-const base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+const base62Chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func Md5ToBase62(md5Hash string) (string, error) {
 	md5Bytes, err := hex.DecodeString(md5Hash)

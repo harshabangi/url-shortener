@@ -34,10 +34,11 @@ func Test_Shorten(t *testing.T) {
 		c := echo.New().NewContext(req, rec)
 		c.Set("service", mockService)
 
-		ms.On("SaveURL", "6sWZzzm", "https://www.google.com").Return(nil)
+		ms.On("SaveURL", "g2GJ99W", "https://www.google.com").Return(nil)
+		ms.On("RecordDomainFrequency", "www.google.com").Return(nil)
 
 		want := &pkg.ShortenResponse{
-			URL: "6sWZzzm",
+			URL: "g2GJ99W",
 		}
 
 		wantBytes, _ := json.Marshal(want)
