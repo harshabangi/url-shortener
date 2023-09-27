@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"fmt"
+	"errors"
 	"net/url"
 )
 
@@ -9,12 +9,20 @@ type ShortenRequest struct {
 	URL string `json:"url"`
 }
 
-func (s *ShortenRequest) ValidateURL() error {
-	_, err := url.ParseRequestURI(s.URL)
-	if err == nil {
-		return nil
+type ValidationResult struct {
+	Domain string
+	Err    error
+}
+
+func (r ShortenRequest) Validate() ValidationResult {
+	if r.URL == "" {
+		return ValidationResult{Err: errors.New("empty url")}
 	}
-	return fmt.Errorf("error validating URL: %s: %w", s.URL, err)
+	parsedURL, err := url.ParseRequestURI(r.URL)
+	if err != nil {
+		return ValidationResult{Err: err}
+	}
+	return ValidationResult{Domain: parsedURL.Host, Err: nil}
 }
 
 type ShortenResponse struct {
