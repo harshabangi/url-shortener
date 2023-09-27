@@ -12,6 +12,7 @@ import (
 	"github.com/harshabangi/url-shortener/pkg"
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -56,9 +57,9 @@ func (s *Service) Run() {
 	})
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
-	e.POST("/v1/shorten", shorten)
-	e.GET("/:short_code", expand)
-	e.GET("/v1/metrics", metrics)
+	e.POST("/v1/shorten", errorLoggingMiddleware(shorten))
+	e.GET("/:short_code", errorLoggingMiddleware(expand))
+	e.GET("/v1/metrics", errorLoggingMiddleware(metrics))
 
 	e.Logger.Fatal(e.Start(s.config.ListenAddr))
 }
@@ -197,4 +198,14 @@ func toDomainFreqListResponse(frequencies []shared.DomainFrequency) pkg.DomainFr
 		res = append(res, pkg.DomainFreqResponse{DomainName: v.Domain, Frequency: v.Frequency})
 	}
 	return res
+}
+
+func errorLoggingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		err := next(c)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+		}
+		return err
+	}
 }
