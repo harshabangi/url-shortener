@@ -3,14 +3,13 @@ package redis
 import (
 	"fmt"
 	"github.com/go-redis/redis"
-	"github.com/harshabangi/url-shortener/internal/storage"
 )
 
 type redisStore struct {
 	c *redis.Client
 }
 
-func New(hostAddr, password string) (storage.Store, error) {
+func New(hostAddr, password string) (*redisStore, error) {
 	c := redis.NewClient(&redis.Options{
 		Addr:     hostAddr,
 		Password: password,
@@ -23,10 +22,17 @@ func New(hostAddr, password string) (storage.Store, error) {
 	return &redisStore{c: c}, nil
 }
 
-func (m *redisStore) SaveURL(key string, originalURL string) error {
-
+func (m *redisStore) SaveURL(key, originalURL string) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (m *redisStore) GetOriginalURL(key string) (string, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
+func (m *redisStore) GetShortURLKey(originalURL string) (string, error) {
+	//TODO implement me
+	panic("implement me")
 }
