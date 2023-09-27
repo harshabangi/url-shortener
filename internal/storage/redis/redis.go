@@ -1,8 +1,9 @@
 package redis
 
 import (
+	"context"
 	"fmt"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/harshabangi/url-shortener/internal/storage/shared"
 	"sort"
 )
@@ -11,25 +12,26 @@ type redisStore struct {
 	c *redis.Client
 }
 
-func New(hostAddr, password string) (*redisStore, error) {
-	c := redis.NewClient(&redis.Options{
-		Addr:     hostAddr,
-		Password: password,
-		DB:       0,
-	})
+func New(redisURL string) (*redisStore, error) {
+	options, err := redis.ParseURL(redisURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse redis URL: %w", err)
+	}
+
+	client := redis.NewClient(options)
 
 	// if we aren't able to ping redis, fail fast
-	if _, err := c.Ping().Result(); err != nil {
+	if _, err := client.Ping(context.Background()).Result(); err != nil {
 		return nil, fmt.Errorf("could not connect to redis db: %w", err)
 	}
-	return &redisStore{c: c}, nil
+	return &redisStore{c: client}, nil
 }
 
-func (m *redisStore) SaveURL(key, originalURL string) (string, error) {
-	existingOriginalURL, err := m.c.Get(key).Result()
+func (m *redisStore) SaveURL(ctx context.Context, key, originalURL string) (string, error) {
+	existingOriginalURL, err := m.c.Get(ctx, key).Result()
 	switch {
 	case err == redis.Nil:
-		_, err = m.c.Set(key, originalURL, 0).Result()
+		_, err = m.c.Set(ctx, key, originalURL, 0).Result()
 		if err != nil {
 			return "", err
 		}
@@ -41,8 +43,8 @@ func (m *redisStore) SaveURL(key, originalURL string) (string, error) {
 	}
 }
 
-func (m *redisStore) GetOriginalURL(key string) (string, error) {
-	value, err := m.c.Get(key).Result()
+func (m *redisStore) GetOriginalURL(ctx context.Context, key string) (string, error) {
+	value, err := m.c.Get(ctx, key).Result()
 	switch {
 	case err == redis.Nil:
 		return "", shared.ErrNotFound
@@ -53,13 +55,13 @@ func (m *redisStore) GetOriginalURL(key string) (string, error) {
 	}
 }
 
-func (m *redisStore) RecordDomainFrequency(domainName string) error {
-	_, err := m.c.ZIncrBy("domain_frequencies", 1.0, domainName).Result()
+func (m *redisStore) RecordDomainFrequency(ctx context.Context, domainName string) error {
+	_, err := m.c.ZIncrBy(ctx, "domain_frequencies", 1.0, domainName).Result()
 	return err
 }
 
-func (m *redisStore) GetTopNDomainsByFrequency(n int) ([]shared.DomainFrequency, error) {
-	result, err := m.c.ZRevRangeWithScores("domain_frequencies", 0, int64(n-1)).Result()
+func (m *redisStore) GetTopNDomainsByFrequency(ctx context.Context, n int) ([]shared.DomainFrequency, error) {
+	result, err := m.c.ZRevRangeWithScores(ctx, "domain_frequencies", 0, int64(n-1)).Result()
 	if err != nil {
 		return nil, err
 	}
