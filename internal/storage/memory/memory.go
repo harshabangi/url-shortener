@@ -3,6 +3,7 @@ package memory
 import (
 	"container/heap"
 	"github.com/harshabangi/url-shortener/internal/storage/shared"
+	"sort"
 	"sync"
 )
 
@@ -85,11 +86,15 @@ func getTopNDomainsByFrequency(domainFrequencyMap map[string]int64, n int) []sha
 		}
 	}
 
-	result := make([]shared.DomainFrequency, n)
-	for i := n - 1; i >= 0; i-- {
+	var result []shared.DomainFrequency
+	for i := n - 1; i >= 0 && pq.Len() > 0; i-- {
 		domainFrequency := heap.Pop(&pq).(shared.DomainFrequency)
-		result[i] = domainFrequency
+		result = append(result, domainFrequency)
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Frequency > result[j].Frequency
+	})
 
 	return result
 }
