@@ -2,6 +2,7 @@ package memory
 
 import (
 	"container/heap"
+	"context"
 	"github.com/harshabangi/url-shortener/internal/storage/shared"
 	"sort"
 	"sync"
@@ -21,7 +22,7 @@ type memoryStore struct {
 	mutex      sync.RWMutex      // Mutex for thread-safe access
 }
 
-func (m *memoryStore) SaveURL(key, originalURL string) (string, error) {
+func (m *memoryStore) SaveURL(ctx context.Context, key, originalURL string) (string, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	if existingOriginalURL, ok := m.urls[key]; ok {
@@ -31,7 +32,7 @@ func (m *memoryStore) SaveURL(key, originalURL string) (string, error) {
 	return "", nil
 }
 
-func (m *memoryStore) GetOriginalURL(key string) (string, error) {
+func (m *memoryStore) GetOriginalURL(ctx context.Context, key string) (string, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	if value, ok := m.urls[key]; ok {
@@ -40,14 +41,14 @@ func (m *memoryStore) GetOriginalURL(key string) (string, error) {
 	return "", shared.ErrNotFound
 }
 
-func (m *memoryStore) RecordDomainFrequency(domainName string) error {
+func (m *memoryStore) RecordDomainFrequency(ctx context.Context, domainName string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	m.domainFreq[domainName]++
 	return nil
 }
 
-func (m *memoryStore) GetTopNDomainsByFrequency(n int) ([]shared.DomainFrequency, error) {
+func (m *memoryStore) GetTopNDomainsByFrequency(ctx context.Context, n int) ([]shared.DomainFrequency, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	if len(m.domainFreq) <= 0 {

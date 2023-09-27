@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/harshabangi/url-shortener/internal/storage/shared"
 	"github.com/harshabangi/url-shortener/pkg"
@@ -38,9 +39,10 @@ func Test_Shorten(t *testing.T) {
 
 		c := echo.New().NewContext(req, rec)
 		c.Set("service", mockService)
+		ctx := context.Background()
 
-		ms.On("SaveURL", "g2GJ99W", "https://www.google.com").Return("", nil)
-		ms.On("RecordDomainFrequency", "www.google.com").Return(nil)
+		ms.On("SaveURL", ctx, "g2GJ99W", "https://www.google.com").Return("", nil)
+		ms.On("RecordDomainFrequency", ctx, "www.google.com").Return(nil)
 
 		want := &pkg.ShortenResponse{
 			URL: "http://localhost:8080/g2GJ99W",
@@ -67,8 +69,9 @@ func Test_Shorten(t *testing.T) {
 
 		c := echo.New().NewContext(req, rec)
 		c.Set("service", mockService)
+		ctx := context.Background()
 
-		ms.On("SaveURL", "g2GJ99W", "https://www.google.com").Return("https://www.google.com", shared.ErrCollision)
+		ms.On("SaveURL", ctx, "g2GJ99W", "https://www.google.com").Return("https://www.google.com", shared.ErrCollision)
 
 		want := &pkg.ShortenResponse{
 			URL: "http://localhost:8080/g2GJ99W",
@@ -95,10 +98,11 @@ func Test_Shorten(t *testing.T) {
 
 		c := echo.New().NewContext(req, rec)
 		c.Set("service", mockService)
+		ctx := context.Background()
 
-		ms.On("SaveURL", "g2GJ99W", "https://www.google.com").Return("https://www.google.com/1", shared.ErrCollision)
-		ms.On("SaveURL", "baYj37f", "https://www.google.com").Return("", nil)
-		ms.On("RecordDomainFrequency", "www.google.com").Return(nil)
+		ms.On("SaveURL", ctx, "g2GJ99W", "https://www.google.com").Return("https://www.google.com/1", shared.ErrCollision)
+		ms.On("SaveURL", ctx, "baYj37f", "https://www.google.com").Return("", nil)
+		ms.On("RecordDomainFrequency", ctx, "www.google.com").Return(nil)
 
 		want := &pkg.ShortenResponse{
 			URL: "http://localhost:8080/baYj37f",
@@ -127,8 +131,9 @@ func TestExpandHandler(t *testing.T) {
 		c.Set("service", mockService)
 		c.SetParamNames("short_code")
 		c.SetParamValues("6sWZzzm")
+		ctx := context.Background()
 
-		ms.On("GetOriginalURL", "6sWZzzm").Return("https://www.google.com", nil)
+		ms.On("GetOriginalURL", ctx, "6sWZzzm").Return("https://www.google.com", nil)
 
 		err := expand(c)
 		assert.Nil(err)
@@ -149,8 +154,9 @@ func TestExpandHandler(t *testing.T) {
 		c.Set("service", mockService)
 		c.SetParamNames("short_code")
 		c.SetParamValues("6sWZzzm")
+		ctx := context.Background()
 
-		ms.On("GetOriginalURL", "6sWZzzm").Return("", shared.ErrNotFound)
+		ms.On("GetOriginalURL", ctx, "6sWZzzm").Return("", shared.ErrNotFound)
 
 		err := expand(c)
 		assert.NotNil(err)

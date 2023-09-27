@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -27,15 +28,13 @@ type Config struct {
 	DataStorageEngine string `json:"data_storage_engine"`
 	ShortURLDomain    string `json:"short_url_domain"`
 	ShortURLLength    int    `json:"short_url_length"`
-	RedisAddr         string `json:"redis_addr"`
-	RedisPassword     string `json:"redis_password"`
+	RedisURL          string `json:"redis_url"`
 }
 
 func (c *Config) toStorageConfig() storage.Config {
 	return storage.Config{
 		DataStorageEngine: c.DataStorageEngine,
-		RedisAddr:         c.RedisAddr,
-		RedisPassword:     c.RedisPassword,
+		RedisURL:          c.RedisURL,
 	}
 }
 
@@ -99,7 +98,9 @@ func shorten(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, validationResult.Err)
 	}
 
-	shortURL, err := generateShortURL(s, req.URL, validationResult.Domain, 0)
+	ctx := context.Background()
+
+	shortURL, err := generateShortURL(ctx, s, req.URL, validationResult.Domain, 0)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
@@ -110,7 +111,7 @@ func shorten(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func generateShortURL(s *Service, originalURL, domainName string, collisionCounter int64) (string, error) {
+func generateShortURL(ctx context.Context, s *Service, originalURL, domainName string, collisionCounter int64) (string, error) {
 	var (
 		input   = []byte(originalURL)
 		counter = []byte(fmt.Sprintf("%d", collisionCounter))
@@ -128,10 +129,10 @@ func generateShortURL(s *Service, originalURL, domainName string, collisionCount
 
 	shortHash := hash[:s.config.ShortURLLength]
 
-	existingOriginalURL, err := s.storage.SaveURL(shortHash, originalURL)
+	existingOriginalURL, err := s.storage.SaveURL(ctx, shortHash, originalURL)
 	switch {
 	case err == nil:
-		if err = s.storage.RecordDomainFrequency(domainName); err != nil {
+		if err = s.storage.RecordDomainFrequency(ctx, domainName); err != nil {
 			return "", err
 		}
 		return shortHash, nil
@@ -140,7 +141,7 @@ func generateShortURL(s *Service, originalURL, domainName string, collisionCount
 		if originalURL == existingOriginalURL {
 			return shortHash, nil
 		}
-		return generateShortURL(s, originalURL, domainName, collisionCounter+1)
+		return generateShortURL(ctx, s, originalURL, domainName, collisionCounter+1)
 
 	default:
 		return "", err
@@ -159,7 +160,7 @@ func generateShortURL(s *Service, originalURL, domainName string, collisionCount
 func expand(c echo.Context) error {
 	s := c.Get("service").(*Service)
 	key := c.Param("short_code")
-	originalURL, err := s.storage.GetOriginalURL(key)
+	originalURL, err := s.storage.GetOriginalURL(context.Background(), key)
 
 	if err != nil {
 		if errors.Is(err, shared.ErrNotFound) {
@@ -183,7 +184,7 @@ func expand(c echo.Context) error {
 func metrics(c echo.Context) error {
 	s := c.Get("service").(*Service)
 	limit := deriveLimit(c.QueryParam("limit"))
-	domainFrequencies, err := s.storage.GetTopNDomainsByFrequency(limit)
+	domainFrequencies, err := s.storage.GetTopNDomainsByFrequency(context.Background(), limit)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
