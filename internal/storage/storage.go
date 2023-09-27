@@ -23,13 +23,19 @@ type Store interface {
 	GetTopNDomainsByFrequency(n int) ([]shared.DomainFrequency, error)
 }
 
-func New(dataStorageEngine string) (Store, error) {
-	switch dataStorageEngine {
+type Config struct {
+	DataStorageEngine string
+	RedisAddr         string
+	RedisPassword     string
+}
+
+func New(config Config) (Store, error) {
+	switch config.DataStorageEngine {
 	case "memory":
 		return memory.New(), nil
 	case "redis":
-		return redis.New("", "")
+		return redis.New(config.RedisAddr, config.RedisPassword)
 	default:
-		return nil, fmt.Errorf("storage engine '%s' is unsupported", dataStorageEngine)
+		return nil, fmt.Errorf("storage engine '%s' is unsupported", config.DataStorageEngine)
 	}
 }

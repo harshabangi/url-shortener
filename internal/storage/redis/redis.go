@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/harshabangi/url-shortener/internal/storage/shared"
+	"sort"
 )
 
 type redisStore struct {
@@ -25,26 +26,55 @@ func New(hostAddr, password string) (*redisStore, error) {
 }
 
 func (m *redisStore) SaveURL(key, originalURL string) (string, error) {
-	//TODO implement me
-	panic("implement me")
+	existingOriginalURL, err := m.c.Get(key).Result()
+	switch {
+	case err == redis.Nil:
+		_, err = m.c.Set(key, originalURL, 0).Result()
+		if err != nil {
+			return "", err
+		}
+		return "", nil
+	case err != nil:
+		return "", err
+	default:
+		return existingOriginalURL, shared.ErrCollision
+	}
 }
 
 func (m *redisStore) GetOriginalURL(key string) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *redisStore) GetShortURLKey(originalURL string) (string, error) {
-	//TODO implement me
-	panic("implement me")
+	value, err := m.c.Get(key).Result()
+	switch {
+	case err == redis.Nil:
+		return "", shared.ErrNotFound
+	case err != nil:
+		return "", err
+	default:
+		return value, nil
+	}
 }
 
 func (m *redisStore) RecordDomainFrequency(domainName string) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := m.c.ZIncrBy("domain_frequencies", 1.0, domainName).Result()
+	return err
 }
 
 func (m *redisStore) GetTopNDomainsByFrequency(n int) ([]shared.DomainFrequency, error) {
-	//TODO implement me
-	panic("implement me")
+	result, err := m.c.ZRevRangeWithScores("domain_frequencies", 0, int64(n-1)).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	domainFrequencies := make([]shared.DomainFrequency, len(result))
+	for i, v := range result {
+		domainFrequencies[i] = shared.DomainFrequency{
+			Domain:    v.Member.(string),
+			Frequency: int64(v.Score),
+		}
+	}
+
+	sort.Slice(domainFrequencies, func(i, j int) bool {
+		return domainFrequencies[i].Frequency > domainFrequencies[j].Frequency
+	})
+
+	return domainFrequencies, nil
 }

@@ -27,6 +27,16 @@ type Config struct {
 	DataStorageEngine string `json:"data_storage_engine"`
 	ShortURLDomain    string `json:"short_url_domain"`
 	ShortURLLength    int    `json:"short_url_length"`
+	RedisAddr         string `json:"redis_addr"`
+	RedisPassword     string `json:"redis_password"`
+}
+
+func (c *Config) toStorageConfig() storage.Config {
+	return storage.Config{
+		DataStorageEngine: c.DataStorageEngine,
+		RedisAddr:         c.RedisAddr,
+		RedisPassword:     c.RedisPassword,
+	}
 }
 
 func NewConfig() *Config {
@@ -34,7 +44,7 @@ func NewConfig() *Config {
 }
 
 func NewService(config *Config) (*Service, error) {
-	store, err := storage.New(config.DataStorageEngine)
+	store, err := storage.New(config.toStorageConfig())
 	if err != nil {
 		return nil, err
 	}
