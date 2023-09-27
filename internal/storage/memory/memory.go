@@ -20,14 +20,14 @@ type memoryStore struct {
 	mutex      sync.RWMutex      // Mutex for thread-safe access
 }
 
-func (m *memoryStore) SaveURL(key, originalURL string) error {
+func (m *memoryStore) SaveURL(key, originalURL string) (string, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	if _, ok := m.urls[key]; ok {
-		return shared.ErrCollision
+	if existingOriginalURL, ok := m.urls[key]; ok {
+		return existingOriginalURL, shared.ErrCollision
 	}
 	m.urls[key] = originalURL
-	return nil
+	return "", nil
 }
 
 func (m *memoryStore) GetOriginalURL(key string) (string, error) {

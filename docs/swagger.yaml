@@ -1,4 +1,11 @@
 definitions:
+  pkg.DomainFreqResponse:
+    properties:
+      domain_name:
+        type: string
+      frequency:
+        type: integer
+    type: object
   pkg.ShortenRequest:
     properties:
       url:
@@ -48,16 +55,25 @@ paths:
     get:
       consumes:
       - application/json
-      description: Redirect to the original URL associated with the provided short
-        code.
+      description: Returns the top N domain names that have been shortened the most
+        number of times.
+      parameters:
+      - description: 'Number of top domains to retrieve (default: 3)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
-        "404":
-          description: Not Found
+          schema:
+            items:
+              $ref: '#/definitions/pkg.DomainFreqResponse'
+            type: array
         "500":
           description: Internal Server Error
-      summary: Redirect to the original URL given a short code.
+      summary: Retrieve the top N domain names with the highest frequency of shortening.
       tags:
       - root
   /v1/shorten:

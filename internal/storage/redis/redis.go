@@ -24,7 +24,7 @@ func New(hostAddr, password string) (*redisStore, error) {
 	return &redisStore{c: c}, nil
 }
 
-func (m *redisStore) SaveURL(key, originalURL string) error {
+func (m *redisStore) SaveURL(key, originalURL string) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }

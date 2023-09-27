@@ -18,20 +18,34 @@
     "paths": {
         "/v1/metrics": {
             "get": {
-                "description": "Redirect to the original URL associated with the provided short code.",
+                "description": "Returns the top N domain names that have been shortened the most number of times.",
                 "consumes": [
+                    "application/json"
+                ],
+                "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "root"
                 ],
-                "summary": "Redirect to the original URL given a short code.",
+                "summary": "Retrieve the top N domain names with the highest frequency of shortening.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of top domains to retrieve (default: 3)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK"
-                    },
-                    "404": {
-                        "description": "Not Found"
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/pkg.DomainFreqResponse"
+                            }
+                        }
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -113,6 +127,17 @@
         }
     },
     "definitions": {
+        "pkg.DomainFreqResponse": {
+            "type": "object",
+            "properties": {
+                "domain_name": {
+                    "type": "string"
+                },
+                "frequency": {
+                    "type": "integer"
+                }
+            }
+        },
         "pkg.ShortenRequest": {
             "type": "object",
             "properties": {

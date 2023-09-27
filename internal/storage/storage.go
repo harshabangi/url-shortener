@@ -8,8 +8,8 @@ import (
 )
 
 type Store interface {
-	// SaveURL saves the mapping between a short URL key and the original URL.
-	SaveURL(key, originalURL string) error
+	// SaveURL saves the mapping between a short URL key and the original URL and returns the already existing original URL if it finds a match
+	SaveURL(key, originalURL string) (string, error)
 
 	// GetOriginalURL retrieves the original URL associated with a short URL key.
 	// It returns ErrNotFound if the key is not found.
