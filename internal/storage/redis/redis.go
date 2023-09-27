@@ -3,6 +3,7 @@ package redis
 import (
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/harshabangi/url-shortener/internal/storage/shared"
 )
 
 type redisStore struct {
@@ -13,6 +14,7 @@ func New(hostAddr, password string) (*redisStore, error) {
 	c := redis.NewClient(&redis.Options{
 		Addr:     hostAddr,
 		Password: password,
+		DB:       0,
 	})
 
 	// if we aren't able to ping redis, fail fast
@@ -33,6 +35,16 @@ func (m *redisStore) GetOriginalURL(key string) (string, error) {
 }
 
 func (m *redisStore) GetShortURLKey(originalURL string) (string, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *redisStore) RecordDomainFrequency(domainName string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *redisStore) GetTopNDomainsByFrequency(n int) ([]shared.DomainFrequency, error) {
 	//TODO implement me
 	panic("implement me")
 }

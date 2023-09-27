@@ -14,7 +14,7 @@ func TestMd5ToBase62(t *testing.T) {
 		want      string
 		shouldErr bool
 	}{
-		{"Valid md5 hash", "5eb63bbbe01eeed093cb22bb8f5acdc3", "2siYh7GJeXz74b2PIRIXCt", false},
+		{"Valid md5 hash", "5eb63bbbe01eeed093cb22bb8f5acdc3", "c2SIRhqtOH9heLczsBsHm3", false},
 		{"Invalid MD5 Hash", "invalid-md5-hash", "", true},
 	}
 

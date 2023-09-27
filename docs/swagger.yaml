@@ -1,0 +1,89 @@
+definitions:
+  pkg.ShortenRequest:
+    properties:
+      url:
+        type: string
+    type: object
+  pkg.ShortenResponse:
+    properties:
+      url:
+        type: string
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: URL Shortener Server
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: URL Shortener API
+  version: "1.0"
+paths:
+  /v1/expand/{short_code}:
+    get:
+      consumes:
+      - application/json
+      description: Redirect to the original URL associated with the provided short
+        code.
+      parameters:
+      - description: The short code to expand
+        in: path
+        name: short_code
+        required: true
+        type: string
+      responses:
+        "301":
+          description: Moved Permanently
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Redirect to the original URL given a short code.
+      tags:
+      - root
+  /v1/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Redirect to the original URL associated with the provided short
+        code.
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Redirect to the original URL given a short code.
+      tags:
+      - root
+  /v1/shorten:
+    post:
+      consumes:
+      - application/json
+      description: Shorten the given long URL.
+      parameters:
+      - description: Shorten Request Body
+        in: body
+        name: contact
+        required: true
+        schema:
+          $ref: '#/definitions/pkg.ShortenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.ShortenResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Shorten the given long URL.
+      tags:
+      - root
+swagger: "2.0"

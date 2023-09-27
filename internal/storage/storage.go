@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/harshabangi/url-shortener/internal/storage/memory"
 	"github.com/harshabangi/url-shortener/internal/storage/redis"
+	"github.com/harshabangi/url-shortener/internal/storage/shared"
 )
 
 type Store interface {
@@ -13,6 +14,13 @@ type Store interface {
 	// GetOriginalURL retrieves the original URL associated with a short URL key.
 	// It returns ErrNotFound if the key is not found.
 	GetOriginalURL(key string) (string, error)
+
+	// RecordDomainFrequency stores the frequency of a domain name.
+	// It associates the domainName with its frequency in the storage.
+	RecordDomainFrequency(domainName string) error
+
+	// GetTopNDomainsByFrequency returns the top n domains and their respective frequencies ordered by frequency descending.
+	GetTopNDomainsByFrequency(n int) ([]shared.DomainFrequency, error)
 }
 
 func New(dataStorageEngine string) (Store, error) {

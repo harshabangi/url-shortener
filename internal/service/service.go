@@ -5,11 +5,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	_ "github.com/harshabangi/url-shortener/docs"
 	"github.com/harshabangi/url-shortener/internal/storage"
 	"github.com/harshabangi/url-shortener/internal/storage/shared"
 	"github.com/harshabangi/url-shortener/internal/util"
 	"github.com/harshabangi/url-shortener/pkg"
 	"github.com/labstack/echo/v4"
+	echoSwagger "github.com/swaggo/echo-swagger"
 	"net/http"
 )
 
@@ -39,7 +41,7 @@ func (s *Service) Run() {
 		}
 	})
 
-	//e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	e.POST("/v1/shorten", shorten)
 	e.GET("/v1/expand/:short_code", expand)
 	e.GET("/v1/metrics", metrics)
@@ -47,6 +49,18 @@ func (s *Service) Run() {
 	e.Logger.Fatal(e.Start(":8082"))
 }
 
+// identify godoc
+// @Summary Shorten the given long URL.
+// @Description Shorten the given long URL.
+// @Tags root
+// @Param contact body pkg.ShortenRequest true "Shorten Request Body"
+// @Accept json
+// @Produce json
+// @Success 200 {object} pkg.ShortenResponse
+// @Failure 404
+// @Failure 500
+// @Router /v1/shorten [post]
+// @Consumes application/json
 func shorten(c echo.Context) error {
 	s := c.Get("service").(*Service)
 
@@ -60,14 +74,14 @@ func shorten(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
-	shortURL, err := createShortURLHash(s, req.URL, 0)
+	shortURL, err := generateShortURL(s, req.URL, validationResult.Domain, 0)
 	if err == nil {
 		return c.JSON(http.StatusOK, &pkg.ShortenResponse{URL: shortURL})
 	}
 	return echo.NewHTTPError(http.StatusInternalServerError)
 }
 
-func createShortURLHash(s *Service, originalURL string, collisionCounter int64) (string, error) {
+func generateShortURL(s *Service, originalURL, domainName string, collisionCounter int64) (string, error) {
 	var (
 		input   = []byte(originalURL)
 		counter = []byte(fmt.Sprintf("%d", collisionCounter))
@@ -88,14 +102,28 @@ func createShortURLHash(s *Service, originalURL string, collisionCounter int64) 
 	err = s.storage.SaveURL(shortHash, originalURL)
 	switch {
 	case err == nil:
+		if err = s.storage.RecordDomainFrequency(domainName); err != nil {
+			return "", err
+		}
 		return shortHash, nil
+
 	case errors.Is(err, shared.ErrCollision):
-		return createShortURLHash(s, originalURL, collisionCounter+1)
+		return generateShortURL(s, originalURL, domainName, collisionCounter+1)
+
 	default:
 		return "", err
 	}
 }
 
+// @Summary Redirect to the original URL given a short code.
+// @Description Redirect to the original URL associated with the provided short code.
+// @Tags root
+// @Accept json
+// @Param short_code path string true "The short code to expand"
+// @Success 301
+// @Failure 404
+// @Failure 500
+// @Router /v1/expand/{short_code} [get]
 func expand(c echo.Context) error {
 	s := c.Get("service").(*Service)
 	key := c.Param("short_code")
@@ -106,11 +134,33 @@ func expand(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusNotFound, "Short code not found")
 		}
 
-		return echo.NewHTTPError(http.StatusBadRequest)
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 	return c.Redirect(http.StatusMovedPermanently, originalURL)
 }
 
+// @Summary Redirect to the original URL given a short code.
+// @Description Redirect to the original URL associated with the provided short code.
+// @Tags root
+// @Accept json
+// @Success 200
+// @Failure 404
+// @Failure 500
+// @Router /v1/metrics [get]
 func metrics(c echo.Context) error {
-	return nil
+	s := c.Get("service").(*Service)
+	domainFrequencies, err := s.storage.GetTopNDomainsByFrequency(3)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+	response := toDomainFreqListResponse(domainFrequencies)
+	return c.JSON(http.StatusOK, &response)
+}
+
+func toDomainFreqListResponse(frequency []shared.DomainFrequency) pkg.DomainFreqListResponse {
+	res := pkg.DomainFreqListResponse{}
+	for _, v := range frequency {
+		res = append(res, pkg.DomainFreqResponse{DomainName: v.Domain, Frequency: v.Frequency})
+	}
+	return res
 }
