@@ -22,7 +22,7 @@ info:
   title: URL Shortener API
   version: "1.0"
 paths:
-  /v1/expand/{short_code}:
+  /{short_code}:
     get:
       consumes:
       - application/json

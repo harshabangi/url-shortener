@@ -1,0 +1,4 @@
+short_url_domain: "http://localhost:8080"
+listen_addr: ":8080"
+data_storage_engine: "memory"
+short_url_length: 7
