@@ -62,7 +62,7 @@ func shorten(c echo.Context) error {
 
 	shortURL, err := createShortURLHash(s, req.URL, 0)
 	if err == nil {
-		return echo.NewHTTPError(http.StatusOK, &pkg.ShortenResponse{URL: shortURL})
+		return c.JSON(http.StatusOK, &pkg.ShortenResponse{URL: shortURL})
 	}
 	return echo.NewHTTPError(http.StatusInternalServerError)
 }
@@ -97,7 +97,18 @@ func createShortURLHash(s *Service, originalURL string, collisionCounter int64) 
 }
 
 func expand(c echo.Context) error {
-	return nil
+	s := c.Get("service").(*Service)
+	key := c.Param("short_code")
+	originalURL, err := s.storage.GetOriginalURL(key)
+
+	if err != nil {
+		if errors.Is(err, shared.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "Short code not found")
+		}
+
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	return c.Redirect(http.StatusMovedPermanently, originalURL)
 }
 
 func metrics(c echo.Context) error {
