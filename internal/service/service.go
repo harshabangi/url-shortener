@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"net/http"
+	"strconv"
 )
 
 type Service struct {
@@ -21,9 +22,9 @@ type Service struct {
 }
 
 type Config struct {
-	ShortURLDomain    string `json:"short_url_domain"`
 	ListenAddr        string `json:"listen_addr"`
 	DataStorageEngine string `json:"data_storage_engine"`
+	ShortURLDomain    string `json:"short_url_domain"`
 	ShortURLLength    int    `json:"short_url_length"`
 }
 
@@ -32,7 +33,7 @@ func NewConfig() *Config {
 }
 
 func NewService(config *Config) (*Service, error) {
-	store, err := storage.New("memory")
+	store, err := storage.New(config.DataStorageEngine)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func generateShortURL(s *Service, originalURL, domainName string, collisionCount
 
 	shortHash := hash[:s.config.ShortURLLength]
 
-	err = s.storage.SaveURL(shortHash, originalURL)
+	existingOriginalURL, err := s.storage.SaveURL(shortHash, originalURL)
 	switch {
 	case err == nil:
 		if err = s.storage.RecordDomainFrequency(domainName); err != nil {
@@ -125,6 +126,9 @@ func generateShortURL(s *Service, originalURL, domainName string, collisionCount
 		return shortHash, nil
 
 	case errors.Is(err, shared.ErrCollision):
+		if originalURL == existingOriginalURL {
+			return shortHash, nil
+		}
 		return generateShortURL(s, originalURL, domainName, collisionCounter+1)
 
 	default:
@@ -156,17 +160,19 @@ func expand(c echo.Context) error {
 	return c.Redirect(http.StatusMovedPermanently, originalURL)
 }
 
-// @Summary Redirect to the original URL given a short code.
-// @Description Redirect to the original URL associated with the provided short code.
+// @Summary Retrieve the top N domain names with the highest frequency of shortening.
+// @Description Returns the top N domain names that have been shortened the most number of times.
 // @Tags root
 // @Accept json
-// @Success 200
-// @Failure 404
+// @Produce json
+// @Param limit query int false "Number of top domains to retrieve (default: 3)"
+// @Success 200 {object} pkg.DomainFreqListResponse
 // @Failure 500
 // @Router /v1/metrics [get]
 func metrics(c echo.Context) error {
 	s := c.Get("service").(*Service)
-	domainFrequencies, err := s.storage.GetTopNDomainsByFrequency(3)
+	limit := deriveLimit(c.QueryParam("limit"))
+	domainFrequencies, err := s.storage.GetTopNDomainsByFrequency(limit)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
@@ -174,9 +180,20 @@ func metrics(c echo.Context) error {
 	return c.JSON(http.StatusOK, &response)
 }
 
-func toDomainFreqListResponse(frequency []shared.DomainFrequency) pkg.DomainFreqListResponse {
+func deriveLimit(limitParam string) int {
+	limit := 3 // Default value
+	if limitParam != "" {
+		l, err := strconv.Atoi(limitParam)
+		if err == nil {
+			limit = l
+		}
+	}
+	return limit
+}
+
+func toDomainFreqListResponse(frequencies []shared.DomainFrequency) pkg.DomainFreqListResponse {
 	res := pkg.DomainFreqListResponse{}
-	for _, v := range frequency {
+	for _, v := range frequencies {
 		res = append(res, pkg.DomainFreqResponse{DomainName: v.Domain, Frequency: v.Frequency})
 	}
 	return res

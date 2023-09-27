@@ -28,9 +28,9 @@ func main() {
 	if err = yaml.Unmarshal(data, conf); err != nil {
 		log.Fatal(err)
 	}
-	app, err := service.NewService(conf)
+	svc, err := service.NewService(conf)
 	if err != nil {
 		log.Fatal(err)
 	}
-	app.Run()
+	svc.Run()
 }

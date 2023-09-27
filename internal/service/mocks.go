@@ -11,9 +11,9 @@ type mockStorage struct {
 	mock.Mock
 }
 
-func (ms *mockStorage) SaveURL(key, originalURL string) error {
+func (ms *mockStorage) SaveURL(key, originalURL string) (string, error) {
 	args := ms.Called(key, originalURL)
-	return args.Error(0)
+	return args.Get(0).(string), args.Error(1)
 }
 
 func (ms *mockStorage) GetOriginalURL(key string) (string, error) {
