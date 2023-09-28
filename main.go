@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/harshabangi/url-shortener/internal/service"
 	"io/ioutil"
@@ -20,7 +21,11 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 func main() {
-	data, err := ioutil.ReadFile(os.Getenv("CONFIG_FILE"))
+	cfgFile, found := os.LookupEnv("CONFIG_FILE")
+	if !found {
+		log.Fatal(fmt.Errorf("configuration file must be specified in CONFIG_FILE enviornment variable"))
+	}
+	data, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		log.Fatal(err)
 	}
