@@ -137,7 +137,7 @@ func TestExpandHandler(t *testing.T) {
 
 		err := expand(c)
 		assert.Nil(err)
-		assert.Equal(http.StatusMovedPermanently, rec.Code)
+		assert.Equal(http.StatusFound, rec.Code)
 		assert.Equal("https://www.google.com", rec.Header().Get("Location"))
 
 		ms.AssertExpectations(t)

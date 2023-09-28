@@ -43,7 +43,7 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
-func NewService(config *Config) (*Service, error) {
+func New(config *Config) (*Service, error) {
 	store, err := storage.New(config.toStorageConfig())
 	if err != nil {
 		return nil, err
