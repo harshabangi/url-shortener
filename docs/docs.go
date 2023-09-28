@@ -122,8 +122,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "301": {
-                        "description": "Moved Permanently"
+                    "302": {
+                        "description": "Found"
                     },
                     "404": {
                         "description": "Not Found"
