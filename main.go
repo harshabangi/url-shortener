@@ -33,7 +33,7 @@ func main() {
 	if err = yaml.Unmarshal(data, conf); err != nil {
 		log.Fatal(err)
 	}
-	svc, err := service.NewService(conf)
+	svc, err := service.New(conf)
 	if err != nil {
 		log.Fatal(err)
 	}
