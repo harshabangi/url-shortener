@@ -34,21 +34,23 @@ To run the URL Shortener service using Docker Compose, follow these steps:
     ```
 2. Configure the Service with the data storage engine you want to use: either "memory" or "redis."
 
-   - To use local machine memory for storage, set the `data_storage_engine` field to "memory" in the configuration file.
+    - To use local machine memory for storage, set the `data_storage_engine` field to "memory" in the configuration
+      file.
 
-     Example configuration for "memory":
-       ```yaml
-       data_storage_engine: "memory"
-       ```
+      Example configuration for "memory":
+        ```yaml
+        data_storage_engine: "memory"
+        ```
 
-   - To use Redis as the data storage engine, set the `data_storage_engine` field to "redis" and provide the `redis_url`
-     field with the appropriate Redis server URL.
+    - To use Redis as the data storage engine, set the `data_storage_engine` field to "redis" and provide
+      the `redis_url`
+      field with the appropriate Redis server URL.
 
-     Example configuration for "redis" (replace with your Redis server URL):
-     ```yaml
-     data_storage_engine: "redis"
-     redis_url: "redis://redis:6379"
-     ```
+      Example configuration for "redis" (replace with your Redis server URL):
+      ```yaml
+      data_storage_engine: "redis"
+      redis_url: "redis://redis:6379"
+      ```
 
 3. If you have made changes to the configuration file and need to update the Docker images, use the following command to
    build the images from the modified source code and configuration:
@@ -70,7 +72,7 @@ To shorten a URL using the URL Shortener service, you can make a POST request to
 **Render Web Service Example:**
 
 ```bash
-curl --request POST --url "https://url-shortener-xk2d.onrender.com/v1/shorten" --data '{"url": "https://harsha.com"}' --header 'Content-Type: application/json'
+curl --request POST --url "https://url-shortener-xk2d.onrender.com/v1/shorten" --data '{"url": "https://www.google.com"}' --header 'Content-Type: application/json'
 ```
 
 *Example Response:*
