@@ -125,7 +125,7 @@ func TestExpandHandler(t *testing.T) {
 		ms := &mockStorage{}
 		mockService := testService(ms)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/expand/:short_code", nil)
+		req := httptest.NewRequest(http.MethodGet, "/:short_code", nil)
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 		c.Set("service", mockService)
@@ -148,7 +148,7 @@ func TestExpandHandler(t *testing.T) {
 		ms := &mockStorage{}
 		mockService := testService(ms)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/expand/:short_code", nil)
+		req := httptest.NewRequest(http.MethodGet, "/:short_code", nil)
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 		c.Set("service", mockService)

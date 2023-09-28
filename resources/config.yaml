@@ -2,5 +2,4 @@ short_url_domain: "http://localhost:8080"
 listen_addr: ":8080"
 data_storage_engine: "redis"
 short_url_length: 7
-redis_addr: "redis:6379"
-redis_password: ""
+redis_url: "redis://redis:6379"

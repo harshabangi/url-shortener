@@ -12,6 +12,7 @@ import (
 	"github.com/harshabangi/url-shortener/internal/util"
 	"github.com/harshabangi/url-shortener/pkg"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"log"
 	"net/http"
@@ -65,6 +66,11 @@ func (s *Service) Run() {
 		}
 	})
 
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowMethods: []string{http.MethodGet, http.MethodPost},
+		AllowOrigins: []string{"*"},
+	}))
+
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	e.POST("/v1/shorten", errorLoggingMiddleware(shorten))
 	e.GET("/:short_code", errorLoggingMiddleware(expand))
@@ -100,20 +106,20 @@ func shorten(c echo.Context) error {
 
 	ctx := context.Background()
 
-	shortURL, err := generateShortURL(ctx, s, req.URL, validationResult.Domain, 0)
+	shortCode, err := generateShortCode(ctx, s, req.URL, validationResult.Domain, 0)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	response := &pkg.ShortenResponse{
-		URL: fmt.Sprintf("%s/%s", s.config.ShortURLDomain, shortURL),
+		URL: fmt.Sprintf("%s/%s", s.config.ShortURLDomain, shortCode),
 	}
 	return c.JSON(http.StatusOK, response)
 }
 
-func generateShortURL(ctx context.Context, s *Service, originalURL, domainName string, collisionCounter int64) (string, error) {
+func generateShortCode(ctx context.Context, s *Service, originalLongURL, domainName string, collisionCounter int64) (string, error) {
 	var (
-		input   = []byte(originalURL)
+		input   = []byte(originalLongURL)
 		counter = []byte(fmt.Sprintf("%d", collisionCounter))
 	)
 	input = append(input, counter...)
@@ -127,21 +133,21 @@ func generateShortURL(ctx context.Context, s *Service, originalURL, domainName s
 		return "", fmt.Errorf("error converting from md5 to base62: %s: %w", md5Hash, err)
 	}
 
-	shortHash := hash[:s.config.ShortURLLength]
+	shortCode := hash[:s.config.ShortURLLength]
 
-	existingOriginalURL, err := s.storage.SaveURL(ctx, shortHash, originalURL)
+	existingLongURL, err := s.storage.SaveURL(ctx, shortCode, originalLongURL)
 	switch {
 	case err == nil:
 		if err = s.storage.RecordDomainFrequency(ctx, domainName); err != nil {
 			return "", err
 		}
-		return shortHash, nil
+		return shortCode, nil
 
 	case errors.Is(err, shared.ErrCollision):
-		if originalURL == existingOriginalURL {
-			return shortHash, nil
+		if originalLongURL == existingLongURL {
+			return shortCode, nil
 		}
-		return generateShortURL(ctx, s, originalURL, domainName, collisionCounter+1)
+		return generateShortCode(ctx, s, originalLongURL, domainName, collisionCounter+1)
 
 	default:
 		return "", err
@@ -160,7 +166,7 @@ func generateShortURL(ctx context.Context, s *Service, originalURL, domainName s
 func expand(c echo.Context) error {
 	s := c.Get("service").(*Service)
 	key := c.Param("short_code")
-	originalURL, err := s.storage.GetOriginalURL(context.Background(), key)
+	originalLongURL, err := s.storage.GetOriginalURL(context.Background(), key)
 
 	if err != nil {
 		if errors.Is(err, shared.ErrNotFound) {
@@ -169,7 +175,7 @@ func expand(c echo.Context) error {
 
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
-	return c.Redirect(http.StatusMovedPermanently, originalURL)
+	return c.Redirect(http.StatusMovedPermanently, originalLongURL)
 }
 
 // @Summary Retrieve the top N domain names with the highest frequency of shortening.
