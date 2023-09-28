@@ -68,7 +68,7 @@ func (s *Service) Run() {
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowMethods: []string{http.MethodGet, http.MethodPost},
-		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
@@ -159,7 +159,7 @@ func generateShortCode(ctx context.Context, s *Service, originalLongURL, domainN
 // @Tags root
 // @Accept json
 // @Param short_code path string true "The short code to expand"
-// @Success 301
+// @Success 302
 // @Failure 404
 // @Failure 500
 // @Router /{short_code} [get]
