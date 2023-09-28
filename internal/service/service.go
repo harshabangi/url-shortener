@@ -175,7 +175,7 @@ func expand(c echo.Context) error {
 
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
-	return c.Redirect(http.StatusMovedPermanently, originalLongURL)
+	return c.Redirect(http.StatusFound, originalLongURL)
 }
 
 // @Summary Retrieve the top N domain names with the highest frequency of shortening.
