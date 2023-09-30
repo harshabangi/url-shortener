@@ -12,7 +12,6 @@ import (
 	"github.com/harshabangi/url-shortener/internal/util"
 	"github.com/harshabangi/url-shortener/pkg"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"log"
 	"net/http"
@@ -65,11 +64,6 @@ func (s *Service) Run() {
 			return next(c)
 		}
 	})
-
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowMethods: []string{http.MethodGet, http.MethodPost},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
-	}))
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	e.POST("/v1/shorten", errorLoggingMiddleware(shorten))
